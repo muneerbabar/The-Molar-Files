@@ -1,0 +1,432 @@
+<title>The Molar Files</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Karla:wght@400;500;700&family=Young+Serif&display=swap">
+<style>
+/* Layout concept: a case file. Dark cover panel, then a two column reading shell
+   with a sticky chapter index beside one case at a time. Evidence board of subject cards. */
+:root {
+  --bg: #EEF3F1;
+  --surface: #FFFFFF;
+  --ink: #142529;
+  --muted: #55696D;
+  --line: #CBD8D5;
+  --accent: #B8384F;
+  --on-accent: #FFFFFF;
+  --teal: #0D6B70;
+  --good: #1E7A4A;
+  --wash: #E2ECE9;
+  --cover: #0F2B33;
+  --cover-ink: #EAF4F1;
+  --cover-muted: #9DB8B9;
+  --cover-accent: #F07A8E;
+  --enamel: #F4F8F6;
+  --display: "Young Serif", Georgia, "Times New Roman", serif;
+  --body: "Karla", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0C1A1E; --surface: #142A2F; --ink: #E6F0EE; --muted: #93AAAD; --line: #274147;
+    --accent: #F07A8E; --on-accent: #1A0A0D; --teal: #5CC5C6; --good: #6FD59B; --wash: #10242A;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0C1A1E; --surface: #142A2F; --ink: #E6F0EE; --muted: #93AAAD; --line: #274147;
+  --accent: #F07A8E; --on-accent: #1A0A0D; --teal: #5CC5C6; --good: #6FD59B; --wash: #10242A;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.6; padding-inline: 0; }
+h1, h2, h3 { font-family: var(--display); font-weight: 400; line-height: 1.15; text-wrap: balance; margin: 0; }
+p { margin: 0; }
+button, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+.mono { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* top bar */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--bg); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; background: none; border: 0; padding: 4px 0; cursor: pointer; font-family: var(--display); font-size: 1.15rem; }
+.brand svg { width: 26px; height: 26px; color: var(--accent); flex: none; }
+.spacer { flex: 1; }
+.progress { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.progress b { color: var(--ink); font-weight: 500; }
+.meter { width: 70px; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--teal); width: 0; transition: width .3s; }
+.menu-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 0.9rem; }
+
+/* shell */
+.shell { display: grid; grid-template-columns: minmax(0, 1fr); max-width: 1120px; margin-inline: auto; padding-inline: 16px; padding-block: 24px 64px; gap: 24px; }
+.toc { display: none; }
+.toc.open { display: block; }
+.toc h2 { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; font-weight: 400; }
+.toc ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.toc button { width: 100%; text-align: left; display: grid; gap: 2px; padding: 10px 12px; background: transparent; border: 1px solid transparent; border-radius: 8px; cursor: pointer; }
+.toc button:hover { background: var(--wash); }
+.toc button[aria-current="page"] { background: var(--surface); border-color: var(--line); }
+.toc .t { font-family: var(--display); font-size: 1.02rem; line-height: 1.2; }
+.toc .s { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.toc .s.solved { color: var(--good); }
+@media (min-width: 900px) {
+  .shell { grid-template-columns: 250px minmax(0, 1fr); gap: 48px; }
+  .toc { display: block; position: sticky; top: calc(64px + env(safe-area-inset-top, 0px)); align-self: start; }
+  .menu-btn { display: none; }
+  .shell.cover-view { grid-template-columns: minmax(0, 1fr); }
+  .shell.cover-view .toc { display: none; }
+}
+
+/* cover */
+.cover { background: var(--cover); color: var(--cover-ink); border-radius: 14px; padding: clamp(24px, 5vw, 56px); display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; align-items: center; }
+.cover .eyebrow { color: var(--cover-accent); }
+.cover h1 { font-size: clamp(2.6rem, 8vw, 4.8rem); margin: 10px 0 14px; }
+.cover .lede { color: var(--cover-muted); font-size: 1.12rem; max-width: 34ch; }
+.cover .by { margin-top: 18px; color: var(--cover-muted); }
+.cover-art { width: min(100%, 340px); justify-self: center; }
+.cover-art svg { width: 100%; height: auto; display: block; }
+.go { margin-top: 26px; display: inline-flex; align-items: center; gap: 10px; background: var(--cover-accent); color: #2A0D14; border: 0; border-radius: 999px; padding: 12px 22px; font-weight: 700; cursor: pointer; }
+@media (min-width: 760px) { .cover { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); } }
+
+.contents { margin-top: 36px; }
+.contents h2 { font-size: 1.5rem; margin-bottom: 14px; }
+.contents ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+.contents button { width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; cursor: pointer; display: grid; gap: 6px; }
+.contents button:hover { border-color: var(--teal); }
+.contents .n { color: var(--accent); }
+.contents .tt { font-family: var(--display); font-size: 1.25rem; line-height: 1.2; }
+.contents .tp { color: var(--muted); font-size: 0.95rem; }
+.how { margin-top: 28px; background: var(--wash); border-radius: 10px; padding: 18px 20px; display: grid; gap: 8px; }
+.how h3 { font-size: 1.15rem; }
+.how p { color: var(--muted); font-size: 0.98rem; max-width: 70ch; }
+
+/* case */
+.case { display: grid; gap: 28px; min-width: 0; }
+.case header { display: grid; gap: 10px; }
+.case .kicker { color: var(--accent); }
+.case h2 { font-size: clamp(2rem, 5vw, 3rem); }
+.story { display: grid; gap: 14px; max-width: 64ch; }
+.question { border-left: 4px solid var(--accent); padding: 4px 0 4px 16px; max-width: 64ch; }
+.question .mono { color: var(--muted); display: block; margin-bottom: 2px; }
+.question p { font-family: var(--display); font-size: 1.25rem; line-height: 1.3; }
+h3.sec { font-size: 1.35rem; margin-bottom: 8px; }
+.sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 12px; }
+.clues ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; counter-reset: clue; max-width: 74ch; }
+.clues li { counter-increment: clue; }
+.clue { width: 100%; text-align: left; display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 8px; align-items: baseline; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; cursor: pointer; line-height: 1.45; }
+.clue::before { content: counter(clue); font-family: var(--mono); font-size: 0.8rem; color: var(--accent); }
+.clue[aria-pressed="true"] { background: var(--wash); color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+
+.board { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); }
+.subject { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px 16px; margin: 0; min-width: 0; display: grid; gap: 10px; align-content: start; }
+.subject legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.sname { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.sname .who { font-family: var(--display); font-size: 1.3rem; line-height: 1.2; }
+.badge { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.subject.ok { border-color: var(--good); }
+.subject.ok .badge { color: var(--good); }
+.subject.bad { border-color: var(--accent); }
+.subject.bad .badge { color: var(--accent); }
+.field { display: grid; gap: 3px; min-width: 0; }
+.field label { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.field select { width: 100%; min-width: 0; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-size: 0.95rem; }
+.field select.dup { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 10px 20px; cursor: pointer; font-weight: 700; }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.btn:hover { filter: brightness(0.96); }
+.status { min-height: 1.6em; font-weight: 500; }
+.status.good { color: var(--good); }
+.status.warn { color: var(--accent); }
+
+.verdict { background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--teal); border-radius: 10px; padding: clamp(18px, 4vw, 30px); display: grid; gap: 16px; }
+.verdict[hidden] { display: none; }
+.verdict h3 { font-size: 1.6rem; }
+.verdict .ans { font-family: var(--display); font-size: 1.2rem; }
+.verdict .ans span { color: var(--accent); }
+.verdict p { max-width: 68ch; }
+.verdict h4 { font-family: var(--mono); font-weight: 400; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
+.verdict ul { margin: 0; padding-left: 1.1rem; color: var(--muted); font-size: 0.92rem; max-width: 68ch; }
+.fiction { color: var(--muted); font-size: 0.85rem; }
+.pager { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 18px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<header class="bar">
+  <button class="brand" id="home" type="button" aria-label="Back to the cover">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 4 5 4.5 5 9.5c0 3.2 1.4 4.3 1.9 7.3.3 2 1.3 2.7 2 .9.5-1.4.8-3.6 3.1-3.6s2.6 2.2 3.1 3.6c.7 1.8 1.7 1.1 2-.9.5-3 1.9-4.1 1.9-7.3C19 4.5 14 4 12 6.5Z"/></svg>
+    <span>The Molar Files</span>
+  </button>
+  <span class="spacer"></span>
+  <div class="progress" aria-live="polite"><span>Solved <b id="pcount">0 / 5</b></span><span class="meter" aria-hidden="true"><i id="pbar"></i></span></div>
+  <button class="menu-btn" id="menu" type="button" aria-expanded="false" aria-controls="toc">Cases</button>
+</header>
+
+<div class="shell cover-view" id="shell">
+  <nav class="toc" id="toc" aria-label="Cases"></nav>
+  <main id="main"></main>
+</div>
+
+<script>
+const DATA = [{"id": "case-1", "num": 1, "title": "The Sipping Suspects", "topic": "Dental caries and free sugars", "who": "Child", "persons": ["Aina", "Bala", "Chen", "Dewi"], "story": ["It began with a note from the head teacher of SK Bukit Lada. Four Year 3 pupils had missed lessons with toothache in a single month, and the school canteen, she insisted, was innocent.", "Dr. Sabrina Wei, the district dental officer, was not so sure. She arrived with a mirror, a torch and a stack of consent forms. In one morning she examined four children, took a short diet history from each, and booked a preventive visit for every one of them.", "By lunchtime her notes had slid off the clipboard and mixed together. Rebuild the morning: what each child eats or drinks, what she found in each mouth, what she did about it, and when each child was seen."], "question": "Which child was treated with silver diamine fluoride?", "answer": "Aina", "cats": [{"key": "habit", "label": "Sugar habit", "items": [{"id": "habit0", "label": "Bedtime sweets"}, {"id": "habit2", "label": "Juice with every meal"}, {"id": "habit3", "label": "Sweet biscuits at break"}, {"id": "habit1", "label": "Sweet tea all afternoon"}]}, {"key": "finding", "label": "Finding", "items": [{"id": "finding1", "label": "White spot lesions"}, {"id": "finding3", "label": "Healthy teeth"}, {"id": "finding2", "label": "Cavities on back molars"}, {"id": "finding0", "label": "Cavities on upper front teeth"}]}, {"key": "action", "label": "Action taken", "items": [{"id": "action2", "label": "Dietary counselling"}, {"id": "action1", "label": "Fluoride varnish"}, {"id": "action3", "label": "Fissure sealants"}, {"id": "action0", "label": "Silver diamine fluoride"}]}, {"key": "slot", "label": "Seen at", "items": [{"id": "slot0", "label": "9:00 am"}, {"id": "slot1", "label": "9:30 am"}, {"id": "slot2", "label": "10:00 am"}, {"id": "slot3", "label": "10:30 am"}]}], "solution": {"Aina": {"habit": "habit0", "finding": "finding0", "action": "action0", "slot": "slot1"}, "Bala": {"habit": "habit1", "finding": "finding1", "action": "action1", "slot": "slot0"}, "Chen": {"habit": "habit2", "finding": "finding2", "action": "action2", "slot": "slot2"}, "Dewi": {"habit": "habit3", "finding": "finding3", "action": "action3", "slot": "slot3"}}, "clues": ["The child who eats sweets at bedtime is the child treated with silver diamine fluoride.", "The child who sips sweet tea all afternoon is the child who received fluoride varnish.", "The child who received fluoride varnish is the child with early white spot lesions.", "The child given fissure sealants is the child with healthy teeth.", "The child who snacks on sweet biscuits at break is not the child seen at 10:00 am.", "The child who received fluoride varnish was seen earlier than Aina.", "The child with cavities on the upper front teeth was seen earlier than Chen.", "Aina was seen earlier than the child whose family received dietary counselling.", "The child whose family received dietary counselling was seen earlier than Dewi."], "verdict": "Bala sipped sweet tea all afternoon and showed white spot lesions, the earliest visible stage of caries, so a fluoride varnish was applied. Aina had cavities on the upper front teeth after bedtime sweets, and the lesions were treated with silver diamine fluoride. Chen drank juice with every meal and had molar cavities, so his family received dietary counselling. Dewi's healthy back teeth were protected with sealants.", "lesson": "Caries risk depends more on how often sugars reach the teeth than on how much is eaten in one sitting. The WHO guideline on sugars intake recommends keeping free sugars below 10 percent of total energy intake, and suggests below 5 percent for additional benefit. Fluoride varnish and fissure sealants are established preventive measures, and silver diamine fluoride is used to arrest active cavities. Matching the intervention to the stage of disease is the core skill this case practises.", "sources": ["World Health Organization. Guideline: Sugars intake for adults and children (2015).", "Cochrane reviews on fluoride varnish and pit and fissure sealants for preventing caries in children."]}, {"id": "case-2", "num": 2, "title": "The Betel Leaf Trail", "topic": "Oral cancer risk and screening", "who": "Attendee", "persons": ["Farid", "Grace", "Hassan", "Indra"], "story": ["The community health day at Balai Raya Kampung Pauh drew a queue that snaked past the tea urn and out of the door. Dr. Sabrina Wei ran the oral screening table in the corner, with a head torch, a stack of gloves and a very short list of questions.", "Four attendees stood out. Each carried a different habit, each showed a different finding in the mouth, and each needed a different next step. Only one of them needed to be referred that same day.", "The registration sheet, the habit checklist and the referral slips were filed in three separate folders, and the folders were dropped. Put the four attendees back together, and decide who is the urgent one."], "question": "Which attendee needs an urgent biopsy referral?", "answer": "Hassan", "cats": [{"key": "habit", "label": "Habit", "items": [{"id": "habit1", "label": "No tobacco, betel or alcohol"}, {"id": "habit3", "label": "Heavy alcohol use"}, {"id": "habit2", "label": "Smokes cigarettes"}, {"id": "habit0", "label": "Chews betel quid"}]}, {"key": "finding", "label": "Finding", "items": [{"id": "finding0", "label": "Homogeneous white patch"}, {"id": "finding3", "label": "Normal mucosa"}, {"id": "finding1", "label": "Ulcer beside a sharp tooth"}, {"id": "finding2", "label": "Ulcer lasting over three weeks"}]}, {"key": "action", "label": "Next step", "items": [{"id": "action0", "label": "Cessation counselling, review in 3 months"}, {"id": "action1", "label": "Smooth the tooth, review in 2 weeks"}, {"id": "action2", "label": "Urgent biopsy referral"}, {"id": "action3", "label": "Routine recall with alcohol advice"}]}, {"key": "slot", "label": "Registered", "items": [{"id": "slot0", "label": "1st in the queue"}, {"id": "slot1", "label": "2nd in the queue"}, {"id": "slot2", "label": "3rd in the queue"}, {"id": "slot3", "label": "4th in the queue"}]}], "solution": {"Farid": {"habit": "habit0", "finding": "finding0", "action": "action0", "slot": "slot1"}, "Grace": {"habit": "habit1", "finding": "finding1", "action": "action1", "slot": "slot3"}, "Hassan": {"habit": "habit2", "finding": "finding2", "action": "action2", "slot": "slot0"}, "Indra": {"habit": "habit3", "finding": "finding3", "action": "action3", "slot": "slot2"}}, "clues": ["The attendee given cessation counselling and a 3 month review is the attendee with a homogeneous white patch.", "The attendee who drinks heavily is the attendee with normal mucosa.", "The attendee sent for an urgent biopsy is the attendee with an ulcer lasting over three weeks.", "The attendee sent for an urgent biopsy is the attendee who registered first.", "The attendee whose tooth was smoothed with a 2 week review is the attendee with no tobacco, betel or alcohol habit.", "The attendee who chews betel quid is the attendee who registered second.", "The attendee with normal mucosa registered earlier than Grace.", "Hassan registered earlier than the attendee who chews betel quid.", "The attendee given cessation counselling and a 3 month review and Indra registered one after the other."], "verdict": "Hassan smoked and had an ulcer that had not healed in over three weeks, which is the pattern that must be biopsied without delay. Farid chewed betel quid and had a homogeneous white patch, so he received cessation counselling and a review. Grace had no risk habits and a traumatic ulcer beside a sharp tooth, which was smoothed and re-checked in two weeks. Indra drank heavily but had a normal mucosa, so he was booked for routine recall with brief alcohol advice.", "lesson": "Tobacco, alcohol and areca nut (betel quid) chewing are the major recognised risk factors for oral cancer, and areca nut is classified by IARC as carcinogenic to humans. A widely taught rule is that an ulcer that fails to heal within about three weeks needs urgent assessment. Screening in a community setting works best when a clear referral pathway sits behind it, so that a finding always leads to an action.", "sources": ["IARC Monographs on the Evaluation of Carcinogenic Risks to Humans, Volume 85: Betel-quid and Areca-nut Chewing (2004).", "National guidance on suspected oral cancer referral, which commonly uses a three week persistence threshold for ulcers."]}, {"id": "case-3", "num": 3, "title": "The Quiet Gums", "topic": "Periodontal disease, diabetes and medication", "who": "Patient", "persons": ["Jamal", "Kavita", "Lim", "Mei"], "story": ["Nobody at the Klinik Pergigian Seri Aman had complained about their gums. That was exactly what worried Dr. Sabrina Wei when she reviewed the week's recall list.", "Four patients had come in for routine checks. All four had bleeding on probing. Yet behind each set of bleeding gums sat a different story: a habit, a medical condition, a prescription, or simply a toothbrush that never reached the gaps between the teeth.", "The appointment book has been smudged by a spilled cup of teh tarik. Work out who came on which day, why their gums looked the way they did, and what the plan should be."], "question": "Whose gum enlargement may be caused by a medicine?", "answer": "Mei", "cats": [{"key": "factor", "label": "Main contributing factor", "items": [{"id": "factor1", "label": "Poorly controlled diabetes"}, {"id": "factor0", "label": "Rarely cleans between teeth"}, {"id": "factor2", "label": "Smokes"}, {"id": "factor3", "label": "Takes a calcium channel blocker"}]}, {"key": "finding", "label": "Finding", "items": [{"id": "finding0", "label": "Gingivitis, no bone loss"}, {"id": "finding1", "label": "Moderate periodontitis"}, {"id": "finding2", "label": "Severe periodontitis, loose teeth"}, {"id": "finding3", "label": "Gum enlargement"}]}, {"key": "action", "label": "Plan", "items": [{"id": "action3", "label": "Medication review with physician"}, {"id": "action1", "label": "Periodontal therapy and glucose review"}, {"id": "action2", "label": "Smoking cessation and root debridement"}, {"id": "action0", "label": "Hygiene instruction and scaling"}]}, {"key": "slot", "label": "Seen on", "items": [{"id": "slot0", "label": "Monday"}, {"id": "slot1", "label": "Tuesday"}, {"id": "slot2", "label": "Wednesday"}, {"id": "slot3", "label": "Thursday"}]}], "solution": {"Jamal": {"factor": "factor0", "finding": "finding0", "action": "action0", "slot": "slot1"}, "Kavita": {"factor": "factor1", "finding": "finding1", "action": "action1", "slot": "slot0"}, "Lim": {"factor": "factor2", "finding": "finding2", "action": "action2", "slot": "slot3"}, "Mei": {"factor": "factor3", "finding": "finding3", "action": "action3", "slot": "slot2"}}, "clues": ["The patient who smokes is the patient seen on Thursday.", "The patient with poorly controlled diabetes is the patient given periodontal therapy with a glucose control review.", "The patient given smoking cessation support and root debridement is the patient who smokes.", "The patient seen on Monday is the patient with poorly controlled diabetes.", "The patient whose medication was reviewed with the physician is the patient with gum enlargement.", "The patient seen on Tuesday is the patient with gingivitis and no bone loss.", "The patient with gingivitis and no bone loss is not the patient taking a calcium channel blocker for blood pressure.", "The patient with moderate periodontitis was seen earlier in the week than Jamal.", "Jamal was seen earlier in the week than the patient with gum enlargement.", "Kavita was seen earlier in the week than the patient taking a calcium channel blocker for blood pressure.", "The patient with gum enlargement and Lim were seen on consecutive days."], "verdict": "Jamal's gingivitis came from plaque that was rarely cleaned between the teeth, and it is fully reversible with instruction and scaling. Kavita's diabetes was poorly controlled and her periodontitis was moderate, so her periodontal therapy was coordinated with a review of her glucose control. Lim smoked and had severe bone loss with loose teeth, so he needed cessation support with root debridement. Mei's gum enlargement followed a calcium channel blocker, so her physician was contacted about her medication.", "lesson": "Periodontitis and diabetes influence each other in both directions: poor glycaemic control increases periodontal risk, and periodontal inflammation can make control harder. Smoking is a leading modifiable risk factor for periodontitis. Some medicines, including calcium channel blockers such as amlodipine, can cause gingival overgrowth, and the dentist should communicate with the prescriber before any change is made. The staging framework agreed in 2018 separates gingivitis from periodontitis by the presence of attachment and bone loss.", "sources": ["Caton JG et al. A new classification scheme for periodontal and peri-implant diseases and conditions. J Periodontol (2018).", "Joint EFP and IDF workshop consensus on periodontitis and diabetes (2013), and its later updates."]}, {"id": "case-4", "num": 4, "title": "The Mercury in the Drain", "topic": "Amalgam, waste and planetary health", "who": "Clinic", "persons": ["Harbour", "Hilltop", "Orchard", "Riverside"], "story": ["A water quality team sampling the municipal sewer near Jalan Sentosa found an unusual spike of mercury. Upstream sat four dental clinics: Harbour, Hilltop, Orchard and Riverside, each in a different corner of the district.", "Dr. Sabrina Wei was asked to audit them all in a single week. She looked at the main filling material each clinic uses and at the way it handles waste from the surgery. Then the lab results arrived, ranked from the cleanest drain sample to the dirtiest.", "The audit forms were stapled together in the wrong order. Match each clinic with its main material, its waste practice and its drain reading, and find the source."], "question": "Which clinic is the main source of the mercury in the drain?", "answer": "Riverside", "cats": [{"key": "material", "label": "Main filling material", "items": [{"id": "material0", "label": "Composite resin"}, {"id": "material3", "label": "Hand-mixed amalgam"}, {"id": "material1", "label": "Capsulated amalgam"}, {"id": "material2", "label": "Glass ionomer with ART"}]}, {"key": "waste", "label": "Waste practice", "items": [{"id": "waste3", "label": "No separator on the suction line"}, {"id": "waste0", "label": "Separator fitted and serviced"}, {"id": "waste2", "label": "Scrap collected by licensed contractor"}, {"id": "waste1", "label": "Separator overdue for service"}]}, {"key": "slot", "label": "Drain reading", "items": [{"id": "slot0", "label": "Lowest"}, {"id": "slot1", "label": "Second lowest"}, {"id": "slot2", "label": "Second highest"}, {"id": "slot3", "label": "Highest"}]}], "solution": {"Harbour": {"material": "material0", "waste": "waste0", "slot": "slot0"}, "Hilltop": {"material": "material1", "waste": "waste1", "slot": "slot2"}, "Orchard": {"material": "material2", "waste": "waste2", "slot": "slot1"}, "Riverside": {"material": "material3", "waste": "waste3", "slot": "slot3"}}, "clues": ["The clinic whose separator is overdue for service is the clinic that uses capsulated amalgam.", "The clinic with the second lowest reading is the clinic that relies on glass ionomer and ART.", "The clinic that still hand mixes amalgam is the clinic with no separator on the suction line.", "The clinic with the second lowest reading is the clinic that sends scrap amalgam to a licensed contractor.", "The clinic with a separator that is fitted and serviced is not the clinic with the second highest reading.", "The clinic with the highest reading is the clinic with no separator on the suction line.", "Hilltop had a lower reading than Riverside.", "The clinic that relies on glass ionomer and ART had a lower reading than Hilltop.", "Harbour and the clinic that sends scrap amalgam to a licensed contractor had readings ranked next to each other."], "verdict": "Riverside still hand-mixed amalgam and had no separator on its suction line, so waste went straight down the drain and gave the highest reading. Hilltop used capsulated amalgam but its separator was overdue for service, which placed it second highest. Orchard relied on glass ionomer and ART and used a licensed contractor for scrap. Harbour placed mostly composite and had a serviced separator, which gave the lowest reading.", "lesson": "The Minamata Convention on Mercury sets out phase-down measures for dental amalgam, including promoting mercury-free alternatives, restricting use to capsulated form, and adopting good environmental practice in clinics. Amalgam separators are commonly specified to retain at least 95 percent of particulate amalgam under the ISO 11143 standard, but they only work when they are maintained. Prevention remains the strongest mercury-reduction measure, because a filling that is never needed produces no waste.", "sources": ["United Nations Environment Programme. Minamata Convention on Mercury, Annex A Part II (dental amalgam).", "International Organization for Standardization. ISO 11143: Dentistry, amalgam separators."]}, {"id": "case-5", "num": 5, "title": "The Fluoride Well", "topic": "Community water fluoride and surveillance", "who": "Community", "persons": ["Bukit Damai", "Kampung Pasir", "Sungai Batu", "Taman Seri"], "story": ["The state health department had asked for one thing: a clear picture of oral health across four communities, each drinking water from a different source. Dr. Sabrina Wei drove between them over three weeks with a portable chair, a water test kit and a survey team of final year students.", "The results were striking. One community had strong teeth and no marks. Another had far too many cavities. A third had children whose teeth showed faint white mottling. In the fourth, the enamel of many children was brown and pitted.", "The survey sheets came back from the printers in alphabetical order, not in the order the villages were visited. Match each community with its water source, its dental findings, the action recommended and the order of the survey."], "question": "Which community needs an urgent safe water supply?", "answer": "Sungai Batu", "cats": [{"key": "water", "label": "Drinking water", "items": [{"id": "water3", "label": "Optimally fluoridated tap water"}, {"id": "water2", "label": "Groundwater with very high fluoride"}, {"id": "water0", "label": "Groundwater with moderate fluoride"}, {"id": "water1", "label": "Low-fluoride tank water"}]}, {"key": "finding", "label": "Dental finding", "items": [{"id": "finding0", "label": "Low caries with mild mottling"}, {"id": "finding2", "label": "Severe fluorosis, pitted enamel"}, {"id": "finding1", "label": "High caries, no fluorosis"}, {"id": "finding3", "label": "Low caries, no fluorosis"}]}, {"key": "action", "label": "Recommended action", "items": [{"id": "action0", "label": "Review total fluoride intake in young children"}, {"id": "action2", "label": "Urgent safe water supply"}, {"id": "action1", "label": "School varnish and toothpaste programme"}, {"id": "action3", "label": "Keep monitoring water fluoride"}]}, {"key": "slot", "label": "Surveyed", "items": [{"id": "slot0", "label": "First"}, {"id": "slot1", "label": "Second"}, {"id": "slot2", "label": "Third"}, {"id": "slot3", "label": "Fourth"}]}], "solution": {"Bukit Damai": {"water": "water0", "finding": "finding0", "action": "action0", "slot": "slot2"}, "Kampung Pasir": {"water": "water1", "finding": "finding1", "action": "action1", "slot": "slot0"}, "Sungai Batu": {"water": "water2", "finding": "finding2", "action": "action2", "slot": "slot3"}, "Taman Seri": {"water": "water3", "finding": "finding3", "action": "action3", "slot": "slot1"}}, "clues": ["The community with low caries and no fluorosis is the community with optimally fluoridated tap water.", "The community advised to review total fluoride intake in young children is the community drinking groundwater with moderate fluoride.", "The community surveyed second is the community that should keep monitoring water fluoride.", "The community with high caries and no fluorosis is the community drinking low-fluoride tank water.", "The community drinking groundwater with very high fluoride is the community that needs an urgent safe water supply.", "The community with severe fluorosis and pitted enamel is not the community drinking groundwater with moderate fluoride.", "The community surveyed fourth is the community with severe fluorosis and pitted enamel.", "Kampung Pasir was surveyed before the community with low caries and no fluorosis.", "Taman Seri was surveyed before the community drinking groundwater with moderate fluoride.", "Bukit Damai and Taman Seri were surveyed one after the other."], "verdict": "Sungai Batu's groundwater carried very high fluoride and the children had severe fluorosis with pitted enamel, so it needed a safe water supply urgently. Bukit Damai's moderate fluoride gave low caries but mild mottling, so the advice was to review all fluoride sources in young children. Kampung Pasir drank low-fluoride tank water and had high caries, which called for a school varnish and toothpaste programme. Taman Seri's optimally fluoridated tap water gave low caries without fluorosis, and the task there was simply to keep monitoring.", "lesson": "Fluoride follows a dose and response pattern: too little leaves teeth more exposed to caries, and too much during tooth development causes fluorosis. The WHO guideline value for fluoride in drinking water is 1.5 mg per litre, and many fluoridation programmes target a level near 0.7 mg per litre. Surveillance of both water levels and dental outcomes is what allows a health system to adjust before harm accumulates.", "sources": ["World Health Organization. Guidelines for Drinking-water Quality, fluoride chapter.", "US Public Health Service. Recommendation for fluoride concentration in drinking water for the prevention of dental caries (2015)."]}];
+const AUTHOR = "";
+const KEY = "molar-files-v1";
+
+let progress = {};
+try { progress = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { progress = {}; }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(progress)); } catch (e) {} }
+function pstate(id) { if (!progress[id]) progress[id] = { sel: {}, struck: [], status: "" }; return progress[id]; }
+
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+let view = "cover";
+
+const COVER_ART = `
+<svg viewBox="0 0 320 320" role="img" aria-label="A tooth under a magnifying glass">
+  <circle cx="160" cy="160" r="150" fill="#16404A"/>
+  <circle cx="160" cy="160" r="150" fill="none" stroke="#2D6470" stroke-width="1.5" stroke-dasharray="3 7"/>
+  <g transform="translate(60 38) scale(1.75)">
+    <path d="M60 30C40 10 10 25 15 60c3 25 15 30 19 60 3 20 14 20 18-2 3-16 13-16 16 0 4 22 15 22 18 2 4-30 16-35 19-60C110 25 80 10 60 30Z" fill="#F4F8F6" stroke="#B8D3D1" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M30 40c4-8 12-10 18-6" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity=".9"/>
+  </g>
+  <circle cx="205" cy="182" r="9" fill="#33474C"/>
+  <circle cx="222" cy="198" r="5" fill="#33474C" opacity=".7"/>
+  <circle cx="212" cy="196" r="58" fill="#F07A8E" fill-opacity=".14" stroke="#F07A8E" stroke-width="9"/>
+  <path d="M254 238l40 46" stroke="#F07A8E" stroke-width="16" stroke-linecap="round"/>
+  <path d="M188 168a34 34 0 0 1 22-10" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity=".6"/>
+</svg>`;
+
+function solvedCount() { return DATA.filter(c => (progress[c.id] || {}).status === "solved").length; }
+
+function renderChrome() {
+  const n = solvedCount();
+  $("#pcount").textContent = n + " / " + DATA.length;
+  $("#pbar").style.width = (n / DATA.length * 100) + "%";
+  $("#toc").innerHTML = `<h2>Casebook</h2><ul>` + DATA.map(c => {
+    const st = (progress[c.id] || {}).status;
+    const label = st === "solved" ? "Solved" : st === "revealed" ? "Solution revealed" : "Open";
+    return `<li><button type="button" data-go="${c.id}" ${view === c.id ? 'aria-current="page"' : ""}><span class="t">${c.num}. ${esc(c.title)}</span><span class="s ${st === "solved" ? "solved" : ""}">${label}</span></button></li>`;
+  }).join("") + `</ul>`;
+  $("#shell").classList.toggle("cover-view", view === "cover");
+}
+
+function renderCover() {
+  return `
+  <section class="cover">
+    <div>
+      <p class="mono eyebrow">An interactive casebook</p>
+      <h1>The Molar Files</h1>
+      <p class="lede">Five cases. Twenty subjects. Every verdict teaches something about dental public health.</p>
+      ${AUTHOR ? `<p class="by">Written by ${esc(AUTHOR)}</p>` : ""}
+      <button class="go" type="button" data-go="${DATA[0].id}">Open the casebook <span aria-hidden="true">&rarr;</span></button>
+    </div>
+    <div class="cover-art">${COVER_ART}</div>
+  </section>
+  <section class="contents" aria-labelledby="ct">
+    <h2 id="ct">The cases</h2>
+    <ol>${DATA.map(c => {
+      const st = (progress[c.id] || {}).status;
+      return `<li><button type="button" data-go="${c.id}"><span class="mono n">Case ${c.num}${st === "solved" ? " · Solved" : ""}</span><span class="tt">${esc(c.title)}</span><span class="tp">${esc(c.topic)}</span></button></li>`;
+    }).join("")}</ol>
+  </section>
+  <section class="how">
+    <h3>How to work a case</h3>
+    <p>Read the story, then use the clues to match every subject with one answer in each field. Each answer is used exactly once. Tap a clue to cross it off once you have used it. Press Check to see how many subjects are right, and the verdict opens when you solve it.</p>
+    <p>Every person, clinic, place and event in this casebook is fictional. The teaching notes draw on published guidance, which is named at the end of each case.</p>
+  </section>`;
+}
+
+function renderCase(c) {
+  const st = pstate(c.id);
+  const idx = DATA.indexOf(c);
+  const prev = DATA[idx - 1], next = DATA[idx + 1];
+  const cards = c.persons.map(p => {
+    const fields = c.cats.map(cat => {
+      const id = `sel-${c.id}-${p.replace(/\W/g, "")}-${cat.key}`;
+      const cur = (st.sel[p] || {})[cat.key] || "";
+      return `<div class="field"><label for="${id}">${esc(cat.label)}</label>
+        <select id="${id}" data-person="${esc(p)}" data-cat="${cat.key}"><option value="">Choose</option>${cat.items.map(it => `<option value="${it.id}" ${cur === it.id ? "selected" : ""}>${esc(it.label)}</option>`).join("")}</select></div>`;
+    }).join("");
+    return `<fieldset class="subject" data-card="${esc(p)}"><legend>${esc(p)}</legend><div class="sname"><span class="who">${esc(p)}</span><span class="badge" data-badge></span></div>${fields}</fieldset>`;
+  }).join("");
+  return `
+  <article class="case">
+    <header>
+      <p class="mono kicker">Case ${c.num} of ${DATA.length} · ${esc(c.topic)}</p>
+      <h2>${esc(c.title)}</h2>
+    </header>
+    <div class="story">${c.story.map(p => `<p>${esc(p)}</p>`).join("")}</div>
+    <div class="question"><span class="mono">The question</span><p>${esc(c.question)}</p></div>
+    <section class="clues" aria-labelledby="cl-${c.id}">
+      <h3 class="sec" id="cl-${c.id}">Clues</h3>
+      <p class="sub">Tap a clue to cross it off.</p>
+      <ol>${c.clues.map((t, i) => `<li><button type="button" class="clue" data-clue="${i}" aria-pressed="${st.struck.includes(i)}">${esc(t)}</button></li>`).join("")}</ol>
+    </section>
+    <section aria-labelledby="bd-${c.id}">
+      <h3 class="sec" id="bd-${c.id}">Case board</h3>
+      <p class="sub">${esc(c.who)}s across, answers down. Each answer is used once per field.</p>
+      <div class="board">${cards}</div>
+    </section>
+    <div class="actions">
+      <button type="button" class="btn primary" data-act="check">Check answers</button>
+      <button type="button" class="btn" data-act="reveal">Reveal solution</button>
+      <button type="button" class="btn" data-act="reset">Start over</button>
+    </div>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+    <section class="verdict" id="verdict" hidden aria-labelledby="vd-${c.id}">
+      <h3 id="vd-${c.id}">Verdict</h3>
+      <p class="ans">${esc(c.question)} <span>${esc(c.answer)}.</span></p>
+      <p>${esc(c.verdict)}</p>
+      <div><h4>Case notes</h4><p>${esc(c.lesson)}</p></div>
+      <div><h4>Sources</h4><ul>${c.sources.map(s => `<li>${esc(s)}</li>`).join("")}</ul></div>
+      <p class="fiction">The people, clinics and communities in this case are fictional.</p>
+    </section>
+    <nav class="pager" aria-label="Case navigation">
+      ${prev ? `<button type="button" class="btn" data-go="${prev.id}">Previous case</button>` : `<button type="button" class="btn" data-go="cover">Cover</button>`}
+      ${next ? `<button type="button" class="btn" data-go="${next.id}">Next case</button>` : `<button type="button" class="btn" data-go="cover">Back to the cover</button>`}
+    </nav>
+  </article>`;
+}
+
+function currentCase() { return DATA.find(c => c.id === view); }
+
+function readSel(c) {
+  const sel = {};
+  document.querySelectorAll("#main select").forEach(s => {
+    (sel[s.dataset.person] = sel[s.dataset.person] || {})[s.dataset.cat] = s.value;
+  });
+  return sel;
+}
+
+function markDuplicates(c) {
+  let dups = [];
+  c.cats.forEach(cat => {
+    const selects = [...document.querySelectorAll(`#main select[data-cat="${cat.key}"]`)];
+    const counts = {};
+    selects.forEach(s => { if (s.value) counts[s.value] = (counts[s.value] || 0) + 1; });
+    selects.forEach(s => {
+      const d = s.value && counts[s.value] > 1;
+      s.classList.toggle("dup", !!d);
+      if (d) s.setAttribute("aria-invalid", "true"); else s.removeAttribute("aria-invalid");
+    });
+    if (Object.values(counts).some(n => n > 1)) dups.push(cat.label.toLowerCase());
+  });
+  return dups;
+}
+
+function setStatus(text, kind) {
+  const s = $("#status");
+  if (!s) return;
+  s.textContent = text;
+  s.className = "status" + (kind ? " " + kind : "");
+}
+
+function clearBadges() {
+  document.querySelectorAll(".subject").forEach(el => { el.classList.remove("ok", "bad"); $("[data-badge]", el).textContent = ""; });
+}
+
+function showVerdict(open) { const v = $("#verdict"); if (v) v.hidden = !open; }
+
+function check(c) {
+  const sel = readSel(c);
+  const empty = c.persons.some(p => c.cats.some(cat => !(sel[p] || {})[cat.key]));
+  if (empty) { setStatus("Choose an answer in every field before checking.", "warn"); return; }
+  const dups = markDuplicates(c);
+  if (dups.length) { setStatus("An answer is used twice in: " + dups.join(", ") + ". Each answer belongs to one subject only.", "warn"); return; }
+  let right = 0;
+  c.persons.forEach(p => {
+    const ok = c.cats.every(cat => sel[p][cat.key] === c.solution[p][cat.key]);
+    const el = document.querySelector(`.subject[data-card="${CSS.escape(p)}"]`);
+    el.classList.toggle("ok", ok); el.classList.toggle("bad", !ok);
+    $("[data-badge]", el).textContent = ok ? "Correct" : "Check again";
+    if (ok) right++;
+  });
+  const st = pstate(c.id);
+  if (right === c.persons.length) {
+    st.status = "solved"; save();
+    setStatus("Case closed. All " + right + " subjects are correct.", "good");
+    showVerdict(true); renderChrome();
+  } else {
+    setStatus(right + " of " + c.persons.length + " subjects are fully correct. Re-read the clues for the others.", right ? "" : "warn");
+  }
+}
+
+function reveal(c) {
+  document.querySelectorAll("#main select").forEach(s => { s.value = c.solution[s.dataset.person][s.dataset.cat]; });
+  const st = pstate(c.id);
+  st.sel = readSel(c);
+  if (st.status !== "solved") st.status = "revealed";
+  save(); markDuplicates(c); clearBadges();
+  setStatus(st.status === "solved" ? "Solution shown." : "Solution revealed. Solve it yourself next time to earn the mark.", "");
+  showVerdict(true); renderChrome();
+}
+
+function reset(c) {
+  progress[c.id] = { sel: {}, struck: [], status: "" }; save();
+  go(c.id, true);
+}
+
+function go(id, force) {
+  if (!force && id === view) return;
+  view = id;
+  try { history.replaceState(null, "", "#" + id); } catch (e) { try { location.hash = id; } catch (e2) {} }
+  const c = currentCase();
+  $("#main").innerHTML = c ? renderCase(c) : renderCover();
+  $("#toc").classList.remove("open"); $("#menu").setAttribute("aria-expanded", "false");
+  renderChrome();
+  if (c) {
+    const st = pstate(c.id);
+    markDuplicates(c);
+    if (st.status) showVerdict(true);
+    if (st.status === "solved") setStatus("Case closed. You solved this one.", "good");
+    if (st.status === "revealed") setStatus("Solution was revealed. Start over to try it yourself.", "");
+  }
+  window.scrollTo(0, 0);
+}
+
+document.addEventListener("click", e => {
+  const g = e.target.closest("[data-go]");
+  if (g) { go(g.dataset.go); return; }
+  const cl = e.target.closest("[data-clue]");
+  if (cl) {
+    const c = currentCase(); const st = pstate(c.id); const i = +cl.dataset.clue;
+    const on = cl.getAttribute("aria-pressed") !== "true";
+    cl.setAttribute("aria-pressed", on);
+    st.struck = st.struck.filter(x => x !== i); if (on) st.struck.push(i);
+    save(); return;
+  }
+  const a = e.target.closest("[data-act]");
+  if (a) {
+    const c = currentCase();
+    if (a.dataset.act === "check") check(c);
+    if (a.dataset.act === "reveal") reveal(c);
+    if (a.dataset.act === "reset") reset(c);
+  }
+});
+
+document.addEventListener("change", e => {
+  if (!e.target.matches("#main select")) return;
+  const c = currentCase(); const st = pstate(c.id);
+  st.sel = readSel(c); save();
+  clearBadges(); markDuplicates(c);
+  setStatus("", "");
+});
+
+$("#home").addEventListener("click", () => go("cover"));
+$("#menu").addEventListener("click", () => {
+  const open = $("#toc").classList.toggle("open");
+  $("#menu").setAttribute("aria-expanded", open);
+});
+window.addEventListener("hashchange", () => {
+  const h = location.hash.replace("#", "");
+  const target = DATA.some(c => c.id === h) ? h : "cover";
+  if (target !== view) go(target);
+});
+
+(function boot() {
+  const h = (location.hash || "").replace("#", "");
+  view = "__none__";
+  go(DATA.some(c => c.id === h) ? h : "cover", true);
+})();
+</script>
